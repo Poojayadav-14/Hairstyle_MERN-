@@ -1,3 +1,23 @@
+# Dependency directories
 node_modules/
+
+# Production builds
+dist/
+dist-ssr/
+
+# Environment variables
 .env
+.env.production
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
 *.log
+npm-debug.log*
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
