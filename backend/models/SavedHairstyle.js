@@ -47,6 +47,11 @@ const savedHairstyleSchema = new mongoose.Schema(
         required: true,
       },
       timeAvailableMinutes: { type: Number, required: true },
+      gender: {
+        type: String,
+        enum: ["Male", "Female", "Unisex"],
+        required: true,
+      },
     },
     // The structured AI-generated output
     result: {

@@ -47,10 +47,11 @@ const hairstyleResponseSchema = {
 /**
  * Builds the prompt sent to Gemini based on user preferences.
  */
-const buildPrompt = ({ occasion, hairType, hairLength, stylingPreference, timeAvailableMinutes }) => {
+const buildPrompt = ({ occasion, hairType, hairLength, stylingPreference, timeAvailableMinutes, gender }) => {
   return `You are an expert professional hairstylist and tutorial writer.
 
 Generate a hairstyle tutorial for a user with the following preferences:
+- Style For: ${gender}
 - Occasion: ${occasion}
 - Hair Type: ${hairType}
 - Hair Length: ${hairLength}
@@ -62,11 +63,12 @@ Generate a hairstyle tutorial for a user with the following preferences:
 - Time Available: approximately ${timeAvailableMinutes} minutes
 
 Requirements:
-1. Provide clear, numbered, step-by-step instructions appropriate for the stated hair type/length and occasion.
-2. The sum of all step durations should realistically fit within the time available (it's okay to be slightly under, but do not significantly exceed it).
-3. Include 2-4 short practical tips (e.g. product recommendations, common mistakes to avoid).
-4. Provide ONE concise YouTube search query that would help the user find a relevant visual tutorial for this exact style.
-5. Keep instructions beginner-friendly and easy to follow at home without a professional stylist.
+1. Ensure the suggested hairstyle, techniques, and product recommendations are appropriate and relevant for a ${gender} audience.
+2. Provide clear, numbered, step-by-step instructions appropriate for the stated hair type/length and occasion.
+3. The sum of all step durations should realistically fit within the time available (it's okay to be slightly under, but do not significantly exceed it).
+4. Include 2-4 short practical tips (e.g. product recommendations, common mistakes to avoid).
+5. Provide ONE concise YouTube search query that would help the user find a relevant visual tutorial for this exact style.
+6. Keep instructions beginner-friendly and easy to follow at home without a professional stylist.
 
 Respond ONLY with the structured data requested.`;
 };

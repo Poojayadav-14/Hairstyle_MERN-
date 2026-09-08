@@ -6,13 +6,14 @@ const { generateHairstyleInstructions } = require("../services/geminiService");
 
 const VALID_OCCASIONS = ["Wedding", "Party", "Casual", "Office", "Other"];
 const VALID_STYLING_PREFS = ["Heatless", "Heat-based"];
+const VALID_GENDERS = ["Male", "Female", "Unisex"];
 
 /**
  * Validates and normalizes the incoming request body for a
  * hairstyle generation request. Throws ApiError(400) on failure.
  */
 const validatePreferences = (body) => {
-  const { occasion, hairType, hairLength, stylingPreference, timeAvailableMinutes } = body;
+  const { occasion, hairType, hairLength, stylingPreference, timeAvailableMinutes, gender } = body;
 
   if (!occasion || !VALID_OCCASIONS.includes(occasion)) {
     throw new ApiError(400, `occasion must be one of: ${VALID_OCCASIONS.join(", ")}`);
@@ -29,8 +30,11 @@ const validatePreferences = (body) => {
   if (!timeAvailableMinutes || typeof timeAvailableMinutes !== "number" || timeAvailableMinutes <= 0) {
     throw new ApiError(400, "timeAvailableMinutes is required and must be a positive number");
   }
+  if (!gender || !VALID_GENDERS.includes(gender)) {
+    throw new ApiError(400, `gender must be one of: ${VALID_GENDERS.join(", ")}`);
+  }
 
-  return { occasion, hairType, hairLength, stylingPreference, timeAvailableMinutes };
+  return { occasion, hairType, hairLength, stylingPreference, timeAvailableMinutes, gender };
 };
 
 /**

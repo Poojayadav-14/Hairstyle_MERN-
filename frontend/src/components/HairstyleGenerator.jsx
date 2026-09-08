@@ -1,18 +1,27 @@
 import React, { useState } from "react";
 
 export default function HairstyleGenerator({ token, backendUrl, onGenerationStart, onGenerationSuccess, onGenerationError }) {
-  const [occasion, setOccasion] = useState("Casual");
+  const [gender, setGender] = useState(null); // null = not yet selected (required)
+  const [occasion, setOccasion] = useState("Casual"); // stores backend value
   const [hairType, setHairType] = useState("Wavy");
   const [hairLength, setHairLength] = useState("Long");
   const [stylingPreference, setStylingPreference] = useState("Heatless");
   const [timeAvailable, setTimeAvailable] = useState(15);
   const [loading, setLoading] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
+  const genders = [
+    { name: "Male", icon: "👨", label: "Male" },
+    { name: "Female", icon: "👩", label: "Female" },
+    { name: "Unisex", icon: "🧑", label: "Unisex" },
+  ];
+
+  // `value` = exact string the backend expects; `label` = what the user sees
   const occasions = [
-    { name: "Casual", icon: "🏠", label: "Casual / Daily" },
-    { name: "Wedding", icon: "💍", label: "Wedding / Bridal" },
-    { name: "Party", icon: "✨", label: "Party / Night Out" },
-    { name: "Work", icon: "💼", label: "Work / Professional" },
+    { value: "Casual",  icon: "🏠", label: "Casual / Daily" },
+    { value: "Wedding", icon: "💍", label: "Wedding / Bridal" },
+    { value: "Party",   icon: "✨", label: "Party / Night Out" },
+    { value: "Office",  icon: "💼", label: "Work / Professional" },
   ];
 
   const hairTypes = [
@@ -35,6 +44,13 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate required gender field
+    if (!gender) {
+      setValidationError("Please select a style preference (Male, Female, or Unisex) before generating.");
+      return;
+    }
+    setValidationError("");
     setLoading(true);
     onGenerationStart();
 
@@ -46,6 +62,7 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          gender,
           occasion,
           hairType,
           hairLength,
@@ -75,15 +92,34 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
       </h2>
 
       <form onSubmit={handleSubmit}>
+        {/* Style For (Gender) Section */}
+        <div className="generator-section-title" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          Style For
+          <span style={{ fontSize: "11px", color: "var(--color-error)", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", WebkitTextFillColor: "var(--color-error)" }}>*</span>
+        </div>
+        <div className="options-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+          {genders.map((opt) => (
+            <button
+              key={opt.name}
+              type="button"
+              className={`option-card ${gender === opt.name ? "active" : ""}`}
+              onClick={() => { setGender(opt.name); setValidationError(""); }}
+            >
+              <span className="option-icon">{opt.icon}</span>
+              <span className="option-label">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Occasion Section */}
         <div className="generator-section-title">Occasion</div>
         <div className="options-grid">
           {occasions.map((opt) => (
             <button
-              key={opt.name}
+              key={opt.value}
               type="button"
-              className={`option-card ${occasion === opt.name ? "active" : ""}`}
-              onClick={() => setOccasion(opt.name)}
+              className={`option-card ${occasion === opt.value ? "active" : ""}`}
+              onClick={() => setOccasion(opt.value)}
             >
               <span className="option-icon">{opt.icon}</span>
               <span className="option-label">{opt.label}</span>
@@ -158,6 +194,12 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
             onChange={(e) => setTimeAvailable(e.target.value)}
           />
         </div>
+
+        {validationError && (
+          <div className="alert alert-danger" style={{ marginBottom: "16px" }}>
+            ⚠️ {validationError}
+          </div>
+        )}
 
         <button
           type="submit"

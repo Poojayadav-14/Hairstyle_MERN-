@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from "react";
 
+// Helper to match step description to a relevant emoji
+function getStepEmoji(text) {
+  if (!text) return "💇‍♀️";
+  const lowerText = text.toLowerCase();
+  if (lowerText.includes("comb") || lowerText.includes("detangle") || lowerText.includes("brush")) return "🪮";
+  if (lowerText.includes("twist") || lowerText.includes("braid")) return "🌀";
+  if (lowerText.includes("spray") || lowerText.includes("product") || lowerText.includes("mousse") || lowerText.includes("gel")) return "🧴";
+  if (lowerText.includes("curl") || lowerText.includes("curling iron")) return "🌪️";
+  if (lowerText.includes("pin") || lowerText.includes("clip") || lowerText.includes("bobby pin")) return "📌";
+  if (lowerText.includes("dry") || lowerText.includes("blow dry")) return "💨";
+  if (lowerText.includes("section") || lowerText.includes("part")) return "✂️";
+  if (lowerText.includes("wrap") || lowerText.includes("bun")) return "🎀";
+  return "💇‍♀️";
+}
+
 export default function History({ token, backendUrl }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,8 +41,8 @@ export default function History({ token, backendUrl }) {
         throw new Error(data.message || "Failed to load history.");
       }
 
-      setHistory(data.data.history || []);
-      setTotalPages(data.data.pagination.pages || 1);
+      setHistory(data.data || []);
+      setTotalPages(data.totalPages || 1);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -65,8 +80,8 @@ export default function History({ token, backendUrl }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           {history.map((item) => {
             const isExpanded = expandedId === item._id;
-            const preferences = item.preferences || {};
-            const result = item.result || {};
+            const preferences = item.requestParams || {};
+            const result = item.resultSnapshot || {};
             const createdDate = item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -108,15 +123,20 @@ export default function History({ token, backendUrl }) {
                     <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "20px" }}>
                       {result.steps?.map((step) => (
                         <div key={step.stepNumber} style={{ background: "rgba(255, 255, 255, 0.01)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.02)" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                            <strong style={{ color: "var(--color-primary)", fontSize: "14px" }}>
-                              Step {step.stepNumber}
-                            </strong>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              <div className="step-emoji-badge" style={{ width: "30px", height: "30px", fontSize: "15px" }}>
+                                {getStepEmoji(step.instruction)}
+                              </div>
+                              <strong style={{ color: "var(--color-primary)", fontSize: "14px" }}>
+                                Step {step.stepNumber}
+                              </strong>
+                            </div>
                             <span style={{ fontSize: "12px", color: "var(--color-accent)" }}>
                               {step.durationMinutes} min
                             </span>
                           </div>
-                          <div style={{ fontSize: "14px", color: "var(--color-text-main)" }}>
+                          <div style={{ fontSize: "14px", color: "var(--color-text-main)", marginTop: "6px" }}>
                             {step.instruction}
                           </div>
                         </div>

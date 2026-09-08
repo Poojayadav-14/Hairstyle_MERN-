@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import Auth from "./components/Auth";
 import HairstyleGenerator from "./components/HairstyleGenerator";
 import HairstyleResult from "./components/HairstyleResult";
-import Favorites from "./components/Favorites";
 import History from "./components/History";
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
@@ -10,7 +9,7 @@ const BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState("generate"); // generate, favorites, history
+  const [activeTab, setActiveTab] = useState("generate"); // generate, history
   
   // Generation Result State
   const [resultData, setResultData] = useState(null);
@@ -88,13 +87,6 @@ function App() {
             onClick={() => setActiveTab("generate")}
           >
             Generate
-          </button>
-          <button
-            type="button"
-            className={`nav-link ${activeTab === "favorites" ? "active" : ""}`}
-            onClick={() => setActiveTab("favorites")}
-          >
-            Favorites
           </button>
           <button
             type="button"
@@ -182,8 +174,6 @@ function App() {
             </div>
           </div>
         )}
-
-        {activeTab === "favorites" && <Favorites token={token} backendUrl={BACKEND_URL} />}
 
         {activeTab === "history" && <History token={token} backendUrl={BACKEND_URL} />}
       </main>

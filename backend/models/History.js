@@ -24,6 +24,11 @@ const historySchema = new mongoose.Schema(
       hairLength: { type: String, required: true },
       stylingPreference: { type: String, required: true },
       timeAvailableMinutes: { type: Number, required: true },
+      gender: {
+        type: String,
+        enum: ["Male", "Female", "Unisex"],
+        required: true,
+      },
     },
     // Snapshot of the raw AI response for that request
     resultSnapshot: {
