@@ -102,7 +102,7 @@ export default function History({ token, backendUrl }) {
                     <span className="result-meta-pill" style={{ marginBottom: "6px", display: "inline-block" }}>
                       {preferences.occasion || "Hairstyle"} • {preferences.stylingPreference || ""}
                     </span>
-                    <h3 style={{ fontSize: "18px", color: "#ffffff" }}>
+                    <h3 style={{ fontSize: "18px" }}>
                       {preferences.hairLength} {preferences.hairType} Style ({result.totalTimeMinutes || 0}m)
                     </h3>
                     <span style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
@@ -122,7 +122,7 @@ export default function History({ token, backendUrl }) {
                     </h4>
                     <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "20px" }}>
                       {result.steps?.map((step) => (
-                        <div key={step.stepNumber} style={{ background: "rgba(255, 255, 255, 0.01)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.02)" }}>
+                        <div key={step.stepNumber} className="history-step-row">
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                               <div className="step-emoji-badge" style={{ width: "30px", height: "30px", fontSize: "15px" }}>

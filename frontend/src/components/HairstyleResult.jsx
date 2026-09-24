@@ -62,8 +62,6 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
     );
   };
 
-
-
   const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     result.youtubeSearchQuery
   )}`;
@@ -76,7 +74,7 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
           <span className="result-meta-pill" style={{ marginBottom: "10px", display: "inline-block" }}>
             {preferences.gender ? `${preferences.gender} • ` : ""}{preferences.occasion} • {preferences.stylingPreference}
           </span>
-          <h2 className="serif-title" style={{ fontSize: "26px", color: "#ffffff" }}>
+          <h2 className="serif-title" style={{ fontSize: "26px" }}>
             Your Personalized AI Hairstyle
           </h2>
           <p style={{ fontSize: "14px", color: "var(--color-text-muted)", marginTop: "4px" }}>
@@ -84,7 +82,7 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-accent)" }}>
+          <div className="result-total-time-val">
             {result.totalTimeMinutes}m
           </div>
           <div style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>Total Time</div>
@@ -95,16 +93,8 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
       {error && <div className="alert alert-danger">{error}</div>}
 
       {/* Featured YouTube Tutorial Card */}
-      <div className="glass-card" style={{
-        padding: "24px",
-        marginBottom: "30px",
-        background: "rgba(220, 38, 38, 0.06)",
-        border: "1px solid rgba(236, 72, 153, 0.35)",
-        boxShadow: "0 0 15px rgba(236, 72, 153, 0.15)",
-        borderRadius: "16px",
-        textAlign: "center"
-      }}>
-        <div style={{ fontSize: "20px", fontWeight: "700", color: "#ffffff", marginBottom: "6px" }}>
+      <div className="youtube-tutorial-card">
+        <div style={{ fontSize: "20px", fontWeight: "700", marginBottom: "6px" }}>
           🎥 Watch the Full Tutorial
         </div>
         <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--color-primary)", marginBottom: "4px" }}>
@@ -117,23 +107,7 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
           href={youtubeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn"
-          style={{
-            background: "linear-gradient(135deg, #e50914 0%, #b81d24 100%)",
-            color: "#ffffff",
-            fontWeight: "700",
-            padding: "14px 28px",
-            fontSize: "15px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 4px 15px rgba(229, 9, 20, 0.3)",
-            width: "100%",
-            borderRadius: "12px",
-            display: "inline-flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "10px",
-            transition: "var(--transition-smooth)"
-          }}
+          className="btn btn-youtube"
         >
           <span>▶</span> Watch Tutorial on YouTube
         </a>
@@ -183,17 +157,8 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
       )}
 
       {/* Find Nearby Salons Card */}
-      <div style={{
-        margin: "28px 0 4px",
-        padding: "24px",
-        borderRadius: "16px",
-        background: "rgba(92, 17, 40, 0.35)",
-        border: "1px solid rgba(236, 72, 153, 0.3)",
-        boxShadow: "0 0 18px rgba(236, 72, 153, 0.12)",
-        backdropFilter: "blur(12px)",
-        textAlign: "center"
-      }}>
-        <div style={{ fontSize: "22px", fontWeight: "700", color: "#ffffff", marginBottom: "8px" }}>
+      <div className="salon-finder-card">
+        <div style={{ fontSize: "22px", fontWeight: "700", marginBottom: "8px" }}>
           💇‍♀️ Prefer a Professional?
         </div>
         <p style={{ fontSize: "14px", color: "var(--color-text-muted)", marginBottom: "20px", margin: "0 auto 20px", maxWidth: "340px" }}>
@@ -202,24 +167,8 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
         <button
           type="button"
           onClick={handleFindSalons}
-          className="btn"
-          style={{
-            background: "var(--color-pastel-gradient)",
-            color: "#ffffff",
-            fontWeight: "700",
-            padding: "13px 26px",
-            fontSize: "15px",
-            border: "none",
-            borderRadius: "12px",
-            width: "100%",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            cursor: "pointer",
-            boxShadow: "0 4px 14px rgba(236, 72, 153, 0.3)",
-            transition: "var(--transition-smooth)"
-          }}
+          className="btn btn-primary"
+          style={{ width: "100%" }}
         >
           📍 Find Top Salons Near Me
         </button>

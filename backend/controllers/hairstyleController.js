@@ -6,7 +6,7 @@ const { generateHairstyleInstructions } = require("../services/geminiService");
 
 const VALID_OCCASIONS = ["Wedding", "Party", "Casual", "Office", "Other"];
 const VALID_STYLING_PREFS = ["Heatless", "Heat-based"];
-const VALID_GENDERS = ["Male", "Female", "Unisex"];
+const VALID_GENDERS = ["Male", "Female"];
 
 /**
  * Validates and normalizes the incoming request body for a

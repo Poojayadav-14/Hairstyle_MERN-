@@ -1,53 +1,126 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-export default function HairstyleGenerator({ token, backendUrl, onGenerationStart, onGenerationSuccess, onGenerationError }) {
-  const [gender, setGender] = useState(null); // null = not yet selected (required)
-  const [occasion, setOccasion] = useState("Casual"); // stores backend value
+const optionsByGender = {
+  Male: {
+    occasions: [
+      { value: "Casual", icon: "🏠", label: "Casual / Daily" },
+      { value: "Wedding", icon: "🤵", label: "Wedding / Groom" },
+      { value: "Party", icon: "✨", label: "Party / Night Out" },
+      { value: "Office", icon: "💼", label: "Work / Professional" },
+    ],
+    hairTypes: [
+      { name: "Straight", icon: "💇‍♂️", label: "Straight" },
+      { name: "Wavy", icon: "🌊", label: "Wavy" },
+      { name: "Curly", icon: "🌀", label: "Curly" },
+      { name: "Coily", icon: "🦁", label: "Coily / Kinky" },
+    ],
+    hairLengths: [
+      { name: "Buzz", icon: "✂️", label: "Buzz Cut", desc: "Very short, under 0.5 inch" },
+      { name: "Short", icon: "👨", label: "Short", desc: "Above ears / collar" },
+      { name: "Medium", icon: "🧑", label: "Medium", desc: "Collar length" },
+      { name: "Long", icon: "👨‍🦰", label: "Long", desc: "Below collar / shoulders" },
+    ],
+    preferences: [
+      { name: "Heatless", icon: "🌱", label: "Heatless Style", desc: "No straighteners / dryers" },
+      { name: "Heat-based", icon: "🔥", label: "Heat Styling", desc: "Blow dry / trimmers / styling tools" },
+    ],
+  },
+  Female: {
+    occasions: [
+      { value: "Casual", icon: "🏠", label: "Casual / Daily" },
+      { value: "Wedding", icon: "💍", label: "Wedding / Bridal" },
+      { value: "Party", icon: "✨", label: "Party / Night Out" },
+      { value: "Office", icon: "💼", label: "Work / Professional" },
+    ],
+    hairTypes: [
+      { name: "Straight", icon: "💁‍♀️", label: "Straight" },
+      { name: "Wavy", icon: "🌊", label: "Wavy" },
+      { name: "Curly", icon: "🌀", label: "Curly" },
+      { name: "Coily", icon: "🦁", label: "Coily / Kinky" },
+    ],
+    hairLengths: [
+      { name: "Short", icon: "👩", label: "Short", desc: "Above shoulders" },
+      { name: "Medium", icon: "🧑", label: "Medium", desc: "Shoulder length" },
+      { name: "Long", icon: "👩‍🦰", label: "Long", desc: "Below shoulders" },
+      { name: "ExtraLong", icon: "👸", label: "Extra Long", desc: "Waist length or longer" },
+    ],
+    preferences: [
+      { name: "Heatless", icon: "🌱", label: "Heatless Style", desc: "No straighteners / dryers" },
+      { name: "Heat-based", icon: "🔥", label: "Heat Styling", desc: "Blow dry / curl / straighten" },
+    ],
+  },
+};
+
+export default function HairstyleGenerator({
+  token,
+  backendUrl,
+  gender: controlledGender,
+  onGenderChange,
+  onGenerationStart,
+  onGenerationSuccess,
+  onGenerationError,
+}) {
+  const [internalGender, setInternalGender] = useState(null);
+  const gender = controlledGender !== undefined ? controlledGender : internalGender;
+
+  const [occasion, setOccasion] = useState("Casual");
   const [hairType, setHairType] = useState("Wavy");
-  const [hairLength, setHairLength] = useState("Long");
+  const [hairLength, setHairLength] = useState("Short");
   const [stylingPreference, setStylingPreference] = useState("Heatless");
   const [timeAvailable, setTimeAvailable] = useState(15);
   const [loading, setLoading] = useState(false);
   const [validationError, setValidationError] = useState("");
 
-  const genders = [
-    { name: "Male", icon: "👨", label: "Male" },
-    { name: "Female", icon: "👩", label: "Female" },
-    { name: "Unisex", icon: "🧑", label: "Unisex" },
-  ];
+  const handleGenderSelect = (selectedGender) => {
+    if (onGenderChange) {
+      onGenderChange(selectedGender);
+    } else {
+      setInternalGender(selectedGender);
+    }
+    setValidationError("");
 
-  // `value` = exact string the backend expects; `label` = what the user sees
-  const occasions = [
-    { value: "Casual",  icon: "🏠", label: "Casual / Daily" },
-    { value: "Wedding", icon: "💍", label: "Wedding / Bridal" },
-    { value: "Party",   icon: "✨", label: "Party / Night Out" },
-    { value: "Office",  icon: "💼", label: "Work / Professional" },
-  ];
+    if (selectedGender && optionsByGender[selectedGender]) {
+      const newOptions = optionsByGender[selectedGender];
+      if (!newOptions.occasions.some((o) => o.value === occasion)) {
+        setOccasion(newOptions.occasions[0].value);
+      }
+      if (!newOptions.hairTypes.some((h) => h.name === hairType)) {
+        setHairType(newOptions.hairTypes[0].name);
+      }
+      if (!newOptions.hairLengths.some((l) => l.name === hairLength)) {
+        setHairLength(newOptions.hairLengths[0].name);
+      }
+      if (!newOptions.preferences.some((p) => p.name === stylingPreference)) {
+        setStylingPreference(newOptions.preferences[0].name);
+      }
+    }
+  };
 
-  const hairTypes = [
-    { name: "Straight", icon: "💁‍♀️", label: "Straight" },
-    { name: "Wavy", icon: "🌊", label: "Wavy" },
-    { name: "Curly", icon: "🌀", label: "Curly" },
-    { name: "Coily", icon: "🦁", label: "Coily / Kinky" },
-  ];
-
-  const hairLengths = [
-    { name: "Short", icon: "👩", label: "Short", desc: "Above shoulders" },
-    { name: "Medium", icon: "🧑", label: "Medium", desc: "Shoulder length" },
-    { name: "Long", icon: "👩‍🦰", label: "Long", desc: "Below shoulders" },
-  ];
-
-  const preferences = [
-    { name: "Heatless", icon: "🌱", label: "Heatless Style", desc: "No straighteners/dryers" },
-    { name: "Heat-based", icon: "🔥", label: "Heat Styling", desc: "Blow dry/curl/straighten" },
-  ];
+  // Sync state if gender changes externally
+  useEffect(() => {
+    if (gender && optionsByGender[gender]) {
+      const newOptions = optionsByGender[gender];
+      if (!newOptions.occasions.some((o) => o.value === occasion)) {
+        setOccasion(newOptions.occasions[0].value);
+      }
+      if (!newOptions.hairTypes.some((h) => h.name === hairType)) {
+        setHairType(newOptions.hairTypes[0].name);
+      }
+      if (!newOptions.hairLengths.some((l) => l.name === hairLength)) {
+        setHairLength(newOptions.hairLengths[0].name);
+      }
+      if (!newOptions.preferences.some((p) => p.name === stylingPreference)) {
+        setStylingPreference(newOptions.preferences[0].name);
+      }
+    }
+  }, [gender]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required gender field
-    if (!gender) {
-      setValidationError("Please select a style preference (Male, Female, or Unisex) before generating.");
+    // Validate required gender
+    if (!gender || (gender !== "Male" && gender !== "Female")) {
+      setValidationError("Please select Male or Female before generating.");
       return;
     }
     setValidationError("");
@@ -85,36 +158,107 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
     }
   };
 
+  // 1. Landing / Selection Screen (When no gender is chosen yet)
+  if (!gender) {
+    return (
+      <div className="gender-landing-card-wrapper">
+        <div className="gender-landing-header">
+          <div className="gender-landing-badge">
+            <span>✨</span> AI-Powered Hairstyle Engine
+          </div>
+          <h2 className="serif-title gender-landing-title">
+            Who are you styling today?
+          </h2>
+          <p className="gender-landing-subtitle">
+            Select a style profile to access personalized hair textures, lengths, occasions, and AI-tailored step-by-step tutorials.
+          </p>
+        </div>
+
+        <div className="gender-landing-grid">
+          {/* Male Card */}
+          <button
+            type="button"
+            className="gender-choice-card male-card"
+            onClick={() => handleGenderSelect("Male")}
+            id="select-male-btn"
+          >
+            <div className="gender-choice-glow"></div>
+            <div className="gender-choice-icon-wrap">
+              <span className="gender-choice-icon">👨</span>
+            </div>
+            <h3 className="gender-choice-name">Male</h3>
+            <p className="gender-choice-desc">
+              Precision fades, pompadours, buzz cuts, textured crops & modern men's grooming routines.
+            </p>
+            <div className="gender-choice-action">
+              <span>Select Male Styles</span>
+              <span className="gender-choice-arrow">→</span>
+            </div>
+          </button>
+
+          {/* Female Card */}
+          <button
+            type="button"
+            className="gender-choice-card female-card"
+            onClick={() => handleGenderSelect("Female")}
+            id="select-female-btn"
+          >
+            <div className="gender-choice-glow"></div>
+            <div className="gender-choice-icon-wrap">
+              <span className="gender-choice-icon">👩</span>
+            </div>
+            <h3 className="gender-choice-name">Female</h3>
+            <p className="gender-choice-desc">
+              Layered waves, updos, intricate braids, bridal glamour & versatile everyday women's styles.
+            </p>
+            <div className="gender-choice-action">
+              <span>Select Female Styles</span>
+              <span className="gender-choice-arrow">→</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Full Generator Form Screen (When Male or Female is chosen)
+  const currentOptions = optionsByGender[gender];
+
   return (
-    <div className="glass-card" style={{ padding: "30px", textAlign: "left" }}>
-      <h2 className="serif-title" style={{ marginBottom: "25px", fontSize: "28px" }}>
-        Design Your Hairstyle
-      </h2>
-
-      <form onSubmit={handleSubmit}>
-        {/* Style For (Gender) Section */}
-        <div className="generator-section-title" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          Style For
-          <span style={{ fontSize: "11px", color: "var(--color-error)", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", WebkitTextFillColor: "var(--color-error)" }}>*</span>
-        </div>
-        <div className="options-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
-          {genders.map((opt) => (
-            <button
-              key={opt.name}
-              type="button"
-              className={`option-card ${gender === opt.name ? "active" : ""}`}
-              onClick={() => { setGender(opt.name); setValidationError(""); }}
-            >
-              <span className="option-icon">{opt.icon}</span>
-              <span className="option-label">{opt.label}</span>
-            </button>
-          ))}
+    <div className="glass-card generator-form-card" style={{ padding: "30px", textAlign: "left" }}>
+      {/* Top Header with Back / Change Button */}
+      <div className="generator-top-nav">
+        <div>
+          <h2 className="serif-title" style={{ fontSize: "26px", marginBottom: "4px" }}>
+            Design Your Hairstyle
+          </h2>
+          <p style={{ fontSize: "13px", color: "var(--color-text-muted)", margin: 0 }}>
+            Tailored options for <strong>{gender}</strong> styling.
+          </p>
         </div>
 
+        <div className="generator-nav-controls">
+          <div className="selected-gender-badge">
+            <span style={{ fontSize: "16px" }}>{gender === "Male" ? "👨" : "👩"}</span>
+            <span>{gender}</span>
+          </div>
+          <button
+            type="button"
+            className="btn-change-gender"
+            onClick={() => handleGenderSelect(null)}
+            title="Switch back to profile selection"
+            id="back-to-gender-btn"
+          >
+            ← Change
+          </button>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ marginTop: "24px" }}>
         {/* Occasion Section */}
         <div className="generator-section-title">Occasion</div>
         <div className="options-grid">
-          {occasions.map((opt) => (
+          {currentOptions.occasions.map((opt) => (
             <button
               key={opt.value}
               type="button"
@@ -130,7 +274,7 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
         {/* Hair Type Section */}
         <div className="generator-section-title">Hair Type</div>
         <div className="options-grid">
-          {hairTypes.map((opt) => (
+          {currentOptions.hairTypes.map((opt) => (
             <button
               key={opt.name}
               type="button"
@@ -146,7 +290,7 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
         {/* Hair Length Section */}
         <div className="generator-section-title">Hair Length</div>
         <div className="options-grid">
-          {hairLengths.map((opt) => (
+          {currentOptions.hairLengths.map((opt) => (
             <button
               key={opt.name}
               type="button"
@@ -163,7 +307,7 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
         {/* Styling Preference Section */}
         <div className="generator-section-title">Styling Preference</div>
         <div className="options-grid two-cols">
-          {preferences.map((opt) => (
+          {currentOptions.preferences.map((opt) => (
             <button
               key={opt.name}
               type="button"
@@ -204,8 +348,9 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
         <button
           type="submit"
           className="btn btn-primary"
-          style={{ width: "100%", height: "50px", fontSize: "16px" }}
+          style={{ width: "100%", height: "52px", fontSize: "16px" }}
           disabled={loading}
+          id="generate-hairstyle-btn"
         >
           {loading ? "Generating Tutorial..." : "Generate Hairstyle with AI"}
         </button>
