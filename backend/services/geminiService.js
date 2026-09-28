@@ -73,34 +73,91 @@ Requirements:
 Respond ONLY with the structured data requested.`;
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isOverloadedError = (error) => {
+  if (!error) return false;
+  const status = error.status || error.statusCode;
+  if (status === 503) return true;
+  const msg = (error.message || "").toLowerCase();
+  return (
+    msg.includes("503") ||
+    msg.includes("overloaded") ||
+    msg.includes("service unavailable") ||
+    msg.includes("spikes in demand") ||
+    msg.includes("high demand")
+  );
+};
+
+const isRateLimitError = (error) => {
+  if (!error) return false;
+  const status = error.status || error.statusCode;
+  if (status === 429) return true;
+  const msg = (error.message || "").toLowerCase();
+  return (
+    msg.includes("429") ||
+    msg.includes("resource_exhausted") ||
+    msg.includes("quota") ||
+    msg.includes("rate limit")
+  );
+};
+
 /**
  * Calls Gemini to generate a structured hairstyle tutorial.
  *
- * @param {Object} preferences - { occasion, hairType, hairLength, stylingPreference, timeAvailableMinutes }
+ * @param {Object} preferences - { occasion, hairType, hairLength, stylingPreference, timeAvailableMinutes, gender }
  * @returns {Promise<Object>} parsed JSON matching hairstyleResponseSchema
  */
 const generateHairstyleInstructions = async (preferences) => {
+  const model = genAI.getGenerativeModel({
+    model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: hairstyleResponseSchema,
+      temperature: 0.7,
+    },
+  });
+
+  const prompt = buildPrompt(preferences);
+  let result;
+
   try {
-    const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: hairstyleResponseSchema,
-        temperature: 0.7,
-      },
-    });
+    result = await model.generateContent(prompt);
+  } catch (firstError) {
+    if (isOverloadedError(firstError)) {
+      console.warn("Gemini service overloaded (503). Retrying once after 1.5s delay...");
+      await sleep(1500);
+      try {
+        result = await model.generateContent(prompt);
+      } catch (retryError) {
+        console.error("Gemini retry failed due to overload:", retryError.message);
+        throw new ApiError(
+          503,
+          "Our AI is a bit busy right now — please try again in a moment"
+        );
+      }
+    } else if (isRateLimitError(firstError)) {
+      console.error("Gemini rate limit exceeded:", firstError.message);
+      throw new ApiError(
+        429,
+        "Too many requests to the AI stylist right now — please wait a moment and try again"
+      );
+    } else {
+      console.error("Gemini API error:", firstError.message);
+      throw new ApiError(
+        502,
+        "Failed to generate hairstyle instructions from AI service. Please try again."
+      );
+    }
+  }
 
-    const prompt = buildPrompt(preferences);
-    const result = await model.generateContent(prompt);
+  try {
     const responseText = result.response.text();
-
-    // responseText is guaranteed valid JSON because of responseSchema above,
-    // but we still guard with try/catch in case of an unexpected API change.
     const parsed = JSON.parse(responseText);
     return parsed;
-  } catch (error) {
-    console.error("Gemini API error:", error.message);
-    throw new ApiError(502, "Failed to generate hairstyle instructions from AI service");
+  } catch (parseError) {
+    console.error("Failed to parse Gemini response as JSON:", parseError.message);
+    throw new ApiError(502, "AI returned an invalid response format. Please try generating again.");
   }
 };
 

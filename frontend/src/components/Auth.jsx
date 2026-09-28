@@ -11,10 +11,42 @@ export default function Auth({ onAuthSuccess, backendUrl }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Client-side validation
+    const trimmedEmail = email.trim();
+    const emailRegex = /^\S+@\S+\.\S+$/;
+
+    if (!isLogin && !name.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+
+    if (!trimmedEmail) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setError("Please enter a valid email address (e.g. name@example.com).");
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
     setLoading(true);
 
     const endpoint = isLogin ? "/api/users/login" : "/api/users/register";
-    const payload = isLogin ? { email, password } : { name, email, password };
+    const payload = isLogin
+      ? { email: trimmedEmail, password }
+      : { name: name.trim(), email: trimmedEmail, password };
 
     try {
       const response = await fetch(`${backendUrl}${endpoint}`, {
@@ -33,7 +65,11 @@ export default function Auth({ onAuthSuccess, backendUrl }) {
 
       onAuthSuccess(data.data);
     } catch (err) {
-      setError(err.message);
+      if (err.name === "TypeError") {
+        setError("Unable to connect to the authentication server. Please check your network connection.");
+      } else {
+        setError(err.message || "Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -65,7 +101,7 @@ export default function Auth({ onAuthSuccess, backendUrl }) {
           </button>
         </div>
 
-        <h2 className="serif-title" style={{ marginBottom: "25px", fontSize: "24px" }}>
+        <h2 className="page-title">
           {isLogin ? "Welcome Back" : "Begin Your AI Journey"}
         </h2>
 
@@ -115,8 +151,7 @@ export default function Auth({ onAuthSuccess, backendUrl }) {
 
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{ width: "100%", marginTop: "10px" }}
+            className="btn btn-primary btn-full"
             disabled={loading}
           >
             {loading ? "Please wait..." : isLogin ? "Login" : "Sign Up"}

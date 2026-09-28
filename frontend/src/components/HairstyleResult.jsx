@@ -20,11 +20,23 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
   const [completedSteps, setCompletedSteps] = useState({});
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [isSaved, setIsSaved] = useState(
+    Boolean(resultData.isSaved || resultData.wasSaved || (resultData._id && !resultData.historyId) || resultData.saved)
+  );
+  const [saving, setSaving] = useState(false);
+  const [salonLocating, setSalonLocating] = useState(false);
+  const [salonNotice, setSalonNotice] = useState("");
 
   useEffect(() => {
     setCompletedSteps({});
     setError("");
     setSuccessMsg("");
+    setIsSaved(
+      Boolean(resultData.isSaved || resultData.wasSaved || (resultData._id && !resultData.historyId) || resultData.saved)
+    );
+    setSaving(false);
+    setSalonLocating(false);
+    setSalonNotice("");
   }, [resultData]);
 
   const toggleStep = (stepNumber) => {
@@ -41,53 +53,123 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
     const fallbackUrl = `https://www.google.com/maps/search/${encoded}`;
 
     if (!navigator.geolocation) {
+      setSalonNotice("Geolocation is not supported by your browser. You can still search for nearby salons using Google Maps below.");
       window.open(fallbackUrl, "_blank");
       return;
     }
 
-    const timer = setTimeout(() => window.open(fallbackUrl, "_blank"), 5000);
+    setSalonLocating(true);
+    setSalonNotice("");
+
+    let hasResolved = false;
+
+    const timer = setTimeout(() => {
+      if (!hasResolved) {
+        hasResolved = true;
+        setSalonLocating(false);
+        setSalonNotice("Location request timed out. You can still search for nearby salons using Google Maps below.");
+        window.open(fallbackUrl, "_blank");
+      }
+    }, 5000);
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (hasResolved) return;
+        hasResolved = true;
         clearTimeout(timer);
+        setSalonLocating(false);
+        setSalonNotice("");
         const { latitude, longitude } = position.coords;
         const mapsUrl = `https://www.google.com/maps/search/${encoded}/@${latitude},${longitude},14z`;
         window.open(mapsUrl, "_blank");
       },
-      () => {
+      (geoError) => {
+        if (hasResolved) return;
+        hasResolved = true;
         clearTimeout(timer);
+        setSalonLocating(false);
+
+        if (geoError && geoError.code === 1) {
+          setSalonNotice("Location access was denied. You can still search for nearby salons using Google Maps below.");
+        } else if (geoError && geoError.code === 3) {
+          setSalonNotice("Location request timed out. You can still search for nearby salons using Google Maps below.");
+        } else {
+          setSalonNotice("Unable to detect your precise location. You can still search for nearby salons using Google Maps below.");
+        }
         window.open(fallbackUrl, "_blank");
       },
       { timeout: 4500, enableHighAccuracy: false }
     );
   };
 
+  const handleSave = async () => {
+    if (isSaved || saving) return;
+    setSaving(true);
+    setError("");
+    setSuccessMsg("");
 
+    const title =
+      resultData.title ||
+      `${preferences.hairLength} ${preferences.hairType} Style for ${preferences.occasion}`;
+
+    try {
+      const response = await fetch(`${backendUrl}/api/hairstyles/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          preferences,
+          result,
+          historyId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to save hairstyle.");
+      }
+
+      setIsSaved(true);
+      setSuccessMsg("Hairstyle saved to your favorites!");
+    } catch (err) {
+      const msg =
+        err.name === "TypeError"
+          ? "Network error: unable to save hairstyle. Please check your connection."
+          : err.message || "Failed to save hairstyle.";
+      setError(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
     result.youtubeSearchQuery
   )}`;
 
   return (
-    <div className="glass-card result-card" style={{ textAlign: "left" }}>
+    <div className="glass-card result-card">
       {/* Title & Metadata */}
       <div className="result-header">
         <div>
-          <span className="result-meta-pill" style={{ marginBottom: "10px", display: "inline-block" }}>
+          <span className="result-meta-pill">
             {preferences.gender ? `${preferences.gender} • ` : ""}{preferences.occasion} • {preferences.stylingPreference}
           </span>
-          <h2 className="serif-title" style={{ fontSize: "26px", color: "#ffffff" }}>
+          <h2 className="page-title">
             Your Personalized AI Hairstyle
           </h2>
-          <p style={{ fontSize: "14px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+          <p className="text-muted-sm">
             Designed for {preferences.hairLength} {preferences.hairType} hair.
           </p>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-accent)" }}>
+        <div className="result-time-block">
+          <div className="result-time-val">
             {result.totalTimeMinutes}m
           </div>
-          <div style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>Total Time</div>
+          <div className="text-muted-xs">Total Time</div>
         </div>
       </div>
 
@@ -95,45 +177,21 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
       {error && <div className="alert alert-danger">{error}</div>}
 
       {/* Featured YouTube Tutorial Card */}
-      <div className="glass-card" style={{
-        padding: "24px",
-        marginBottom: "30px",
-        background: "rgba(220, 38, 38, 0.06)",
-        border: "1px solid rgba(236, 72, 153, 0.35)",
-        boxShadow: "0 0 15px rgba(236, 72, 153, 0.15)",
-        borderRadius: "16px",
-        textAlign: "center"
-      }}>
-        <div style={{ fontSize: "20px", fontWeight: "700", color: "#ffffff", marginBottom: "6px" }}>
+      <div className="glass-card youtube-featured-card">
+        <div className="featured-card-title">
           🎥 Watch the Full Tutorial
         </div>
-        <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--color-primary)", marginBottom: "4px" }}>
+        <div className="featured-card-subtitle">
           {preferences.hairLength} {preferences.hairType} Style for {preferences.occasion}
         </div>
-        <div style={{ fontSize: "12px", color: "var(--color-text-muted)", marginBottom: "20px", fontStyle: "italic" }}>
+        <div className="featured-card-query">
           Search Query: "{result.youtubeSearchQuery}"
         </div>
         <a
           href={youtubeUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn"
-          style={{
-            background: "linear-gradient(135deg, #e50914 0%, #b81d24 100%)",
-            color: "#ffffff",
-            fontWeight: "700",
-            padding: "14px 28px",
-            fontSize: "15px",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxShadow: "0 4px 15px rgba(229, 9, 20, 0.3)",
-            width: "100%",
-            borderRadius: "12px",
-            display: "inline-flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "10px",
-            transition: "var(--transition-smooth)"
-          }}
+          className="btn btn-youtube"
         >
           <span>▶</span> Watch Tutorial on YouTube
         </a>
@@ -155,7 +213,7 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
               </div>
               <div className="step-content">
                 <div className="step-header">
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div className="item-step-meta">
                     <div className="step-emoji-badge">
                       {getStepEmoji(step.instruction)}
                     </div>
@@ -163,7 +221,7 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
                   </div>
                   <span className="step-duration">{step.durationMinutes} min</span>
                 </div>
-                <div className="step-desc" style={{ marginTop: "10px" }}>{step.instruction}</div>
+                <div className="step-desc">{step.instruction}</div>
               </div>
             </div>
           );
@@ -183,56 +241,76 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
       )}
 
       {/* Find Nearby Salons Card */}
-      <div style={{
-        margin: "28px 0 4px",
-        padding: "24px",
-        borderRadius: "16px",
-        background: "rgba(92, 17, 40, 0.35)",
-        border: "1px solid rgba(236, 72, 153, 0.3)",
-        boxShadow: "0 0 18px rgba(236, 72, 153, 0.12)",
-        backdropFilter: "blur(12px)",
-        textAlign: "center"
-      }}>
-        <div style={{ fontSize: "22px", fontWeight: "700", color: "#ffffff", marginBottom: "8px" }}>
+      <div className="salon-featured-card">
+        <div className="featured-card-title">
           💇‍♀️ Prefer a Professional?
         </div>
-        <p style={{ fontSize: "14px", color: "var(--color-text-muted)", marginBottom: "20px", margin: "0 auto 20px", maxWidth: "340px" }}>
+        <p className="salon-card-desc">
           Let an expert bring this look to life.
         </p>
         <button
           type="button"
           onClick={handleFindSalons}
-          className="btn"
-          style={{
-            background: "var(--color-pastel-gradient)",
-            color: "#ffffff",
-            fontWeight: "700",
-            padding: "13px 26px",
-            fontSize: "15px",
-            border: "none",
-            borderRadius: "12px",
-            width: "100%",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            cursor: "pointer",
-            boxShadow: "0 4px 14px rgba(236, 72, 153, 0.3)",
-            transition: "var(--transition-smooth)"
-          }}
+          disabled={salonLocating}
+          className="btn btn-salon"
         >
-          📍 Find Top Salons Near Me
+          {salonLocating ? (
+            <>
+              <span className="loading-spinner mini"></span>
+              Locating Nearby Salons...
+            </>
+          ) : (
+            <>📍 Find Top Salons Near Me</>
+          )}
         </button>
+
+        {salonNotice && (
+          <div className="salon-notice-box">
+            <p className="salon-notice-text">
+              ⚠️ {salonNotice}
+            </p>
+            <a
+              href={`https://www.google.com/maps/search/${encodeURIComponent(
+                `salons near me for ${preferences.occasion || "hairstyle"} ${result.youtubeSearchQuery || "hairstyle"}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary btn-sm"
+            >
+              🔍 Open Salon Search on Google Maps
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Action Footer */}
       <div className="result-footer">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || isSaved}
+          className={`btn ${isSaved ? "btn-secondary" : "btn-primary"}`}
+        >
+          {saving ? (
+            <>
+              <span className="loading-spinner mini"></span>
+              Saving...
+            </>
+          ) : isSaved ? (
+            <>
+              <span>Saved ✓</span>
+            </>
+          ) : (
+            <>
+              <span>💾</span> Save Hairstyle
+            </>
+          )}
+        </button>
         <a
           href={youtubeUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn-secondary"
-          style={{ display: "inline-flex", gap: "8px", width: "100%" }}
         >
           <span>📺</span> Search YouTube Tutorials
         </a>

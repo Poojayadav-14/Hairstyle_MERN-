@@ -15,21 +15,22 @@ function getStepEmoji(text) {
   return "💇‍♀️";
 }
 
-export default function History({ token, backendUrl }) {
-  const [history, setHistory] = useState([]);
+export default function SavedStyles({ token, backendUrl }) {
+  const [savedStyles, setSavedStyles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
-  
-  // Pagination
+
+  // Pagination (limit = 5 matching History)
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const limit = 5;
 
-  const fetchHistory = async () => {
+  const fetchSavedStyles = async () => {
     setLoading(true);
+    setError("");
     try {
-      const response = await fetch(`${backendUrl}/api/hairstyles/history?page=${page}&limit=${limit}`, {
+      const response = await fetch(`${backendUrl}/api/hairstyles/saved`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -38,16 +39,15 @@ export default function History({ token, backendUrl }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to load history.");
+        throw new Error(data.message || "Failed to load saved hairstyles.");
       }
 
-      setHistory(data.data || []);
-      setTotalPages(data.totalPages || 1);
+      setSavedStyles(data.data || []);
     } catch (err) {
       const msg =
         err.name === "TypeError"
-          ? "Couldn't load your generation history — check your connection and try again."
-          : err.message || "Failed to load history.";
+          ? "Couldn't load your saved styles — check your connection and try again."
+          : err.message || "Failed to load saved hairstyles.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -55,60 +55,101 @@ export default function History({ token, backendUrl }) {
   };
 
   useEffect(() => {
-    fetchHistory();
-  }, [page]);
+    fetchSavedStyles();
+  }, []);
 
-  if (loading && history.length === 0) {
+  const handleRemove = async (id) => {
+    setDeletingId(id);
+    setError("");
+    try {
+      const response = await fetch(`${backendUrl}/api/hairstyles/saved/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to remove saved hairstyle.");
+      }
+
+      setSavedStyles((prev) => {
+        const updated = prev.filter((item) => item._id !== id);
+        const newTotalPages = Math.ceil(updated.length / limit) || 1;
+        if (page > newTotalPages) {
+          setPage(newTotalPages);
+        }
+        return updated;
+      });
+    } catch (err) {
+      const msg =
+        err.name === "TypeError"
+          ? "Network error: couldn't remove style. Please check your connection."
+          : err.message || "Failed to remove saved hairstyle.";
+      setError(msg);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  if (loading && savedStyles.length === 0) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <div className="loading-text">Loading history...</div>
+        <div className="loading-text">Loading saved hairstyles...</div>
       </div>
     );
   }
 
+  const totalPages = Math.ceil(savedStyles.length / limit) || 1;
+  const paginatedStyles = savedStyles.slice((page - 1) * limit, page * limit);
+
   return (
     <div className="list-wrapper">
       <h2 className="page-title">
-        Generation History
+        Saved Hairstyles
       </h2>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {error && history.length === 0 ? (
+      {error && savedStyles.length === 0 ? (
         <div className="glass-card state-card">
           <span className="state-card-icon">⚠️</span>
           <p className="state-card-desc">
-            Couldn't load your generation history — check your connection and try again.
+            Couldn't load your saved styles — check your connection and try again.
           </p>
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={fetchHistory}
+            onClick={fetchSavedStyles}
           >
             🔄 Try Again
           </button>
         </div>
-      ) : history.length === 0 ? (
+      ) : savedStyles.length === 0 ? (
         <div className="glass-card state-card">
-          <span className="state-card-icon">📖</span>
+          <span className="state-card-icon">⭐</span>
           <p className="state-card-desc">
-            No history records yet. Generate some styles to see your logs!
+            You haven't saved any styles yet — generate one and save it to see it here.
           </p>
         </div>
       ) : (
         <div className="card-stack">
-          {history.map((item) => {
+          {paginatedStyles.map((item) => {
             const isExpanded = expandedId === item._id;
-            const preferences = item.requestParams || {};
-            const result = item.resultSnapshot || {};
-            const createdDate = item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }) : "";
+            const preferences = item.preferences || {};
+            const result = item.result || {};
+            const createdDate = item.createdAt
+              ? new Date(item.createdAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "";
 
             return (
               <div
@@ -119,17 +160,34 @@ export default function History({ token, backendUrl }) {
                 <div className="item-card-header">
                   <div>
                     <span className="result-meta-pill">
+                      {preferences.gender ? `${preferences.gender} • ` : ""}
                       {preferences.occasion || "Hairstyle"} • {preferences.stylingPreference || ""}
                     </span>
                     <h3 className="item-card-title">
-                      {preferences.hairLength} {preferences.hairType} Style ({result.totalTimeMinutes || 0}m)
+                      {item.title ||
+                        `${preferences.hairLength || ""} ${preferences.hairType || ""} Style (${
+                          result.totalTimeMinutes || 0
+                        }m)`}
                     </h3>
                     <span className="item-card-date">
-                      Generated on {createdDate}
+                      Saved on {createdDate}
                     </span>
                   </div>
-                  <div className="item-card-toggle">
-                    {isExpanded ? "▲ Collapse" : "▼ Expand"}
+                  <div className="item-card-actions">
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline btn-sm"
+                      disabled={deletingId === item._id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemove(item._id);
+                      }}
+                    >
+                      {deletingId === item._id ? "Removing..." : "Remove"}
+                    </button>
+                    <div className="item-card-toggle">
+                      {isExpanded ? "▲ Collapse" : "▼ Expand"}
+                    </div>
                   </div>
                 </div>
 
@@ -175,15 +233,19 @@ export default function History({ token, backendUrl }) {
                     )}
 
                     {/* YouTube link */}
-                    <a
-                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(result.youtubeSearchQuery || "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-secondary btn-full"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      📺 View YouTube Tutorials
-                    </a>
+                    {result.youtubeSearchQuery && (
+                      <a
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
+                          result.youtubeSearchQuery
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary btn-full"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        📺 View YouTube Tutorials
+                      </a>
+                    )}
                   </div>
                 )}
               </div>

@@ -45,11 +45,32 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required gender field
+    // Validate all required fields
     if (!gender) {
-      setValidationError("Please select a style preference (Male, Female, or Unisex) before generating.");
+      setValidationError("Please select who this style is for (Male, Female, or Unisex) before generating.");
       return;
     }
+    if (!occasion) {
+      setValidationError("Please select an occasion.");
+      return;
+    }
+    if (!hairType) {
+      setValidationError("Please select your hair type.");
+      return;
+    }
+    if (!hairLength) {
+      setValidationError("Please select your hair length.");
+      return;
+    }
+    if (!stylingPreference) {
+      setValidationError("Please select a styling preference.");
+      return;
+    }
+    if (!timeAvailable || isNaN(Number(timeAvailable)) || Number(timeAvailable) < 5) {
+      setValidationError("Please specify at least 5 minutes of available time.");
+      return;
+    }
+
     setValidationError("");
     setLoading(true);
     onGenerationStart();
@@ -79,25 +100,29 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
 
       onGenerationSuccess(data.data);
     } catch (err) {
-      onGenerationError(err.message);
+      const errorMsg =
+        err.name === "TypeError"
+          ? "Unable to connect to the server. Please check your internet connection and try again."
+          : err.message || "Failed to generate hairstyle.";
+      onGenerationError(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="glass-card" style={{ padding: "30px", textAlign: "left" }}>
-      <h2 className="serif-title" style={{ marginBottom: "25px", fontSize: "28px" }}>
+    <div className="glass-card card-padded">
+      <h2 className="page-title">
         Design Your Hairstyle
       </h2>
 
       <form onSubmit={handleSubmit}>
         {/* Style For (Gender) Section */}
-        <div className="generator-section-title" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <div className="generator-section-title">
           Style For
-          <span style={{ fontSize: "11px", color: "var(--color-error)", fontWeight: "700", textTransform: "uppercase", letterSpacing: "1px", WebkitTextFillColor: "var(--color-error)" }}>*</span>
+          <span className="required-badge">*</span>
         </div>
-        <div className="options-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+        <div className="options-grid three-cols">
           {genders.map((opt) => (
             <button
               key={opt.name}
@@ -119,7 +144,7 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
               key={opt.value}
               type="button"
               className={`option-card ${occasion === opt.value ? "active" : ""}`}
-              onClick={() => setOccasion(opt.value)}
+              onClick={() => { setOccasion(opt.value); setValidationError(""); }}
             >
               <span className="option-icon">{opt.icon}</span>
               <span className="option-label">{opt.label}</span>
@@ -135,7 +160,7 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
               key={opt.name}
               type="button"
               className={`option-card ${hairType === opt.name ? "active" : ""}`}
-              onClick={() => setHairType(opt.name)}
+              onClick={() => { setHairType(opt.name); setValidationError(""); }}
             >
               <span className="option-icon">{opt.icon}</span>
               <span className="option-label">{opt.label}</span>
@@ -151,7 +176,7 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
               key={opt.name}
               type="button"
               className={`option-card ${hairLength === opt.name ? "active" : ""}`}
-              onClick={() => setHairLength(opt.name)}
+              onClick={() => { setHairLength(opt.name); setValidationError(""); }}
             >
               <span className="option-icon">{opt.icon}</span>
               <span className="option-label">{opt.label}</span>
@@ -168,7 +193,7 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
               key={opt.name}
               type="button"
               className={`option-card ${stylingPreference === opt.name ? "active" : ""}`}
-              onClick={() => setStylingPreference(opt.name)}
+              onClick={() => { setStylingPreference(opt.name); setValidationError(""); }}
             >
               <span className="option-icon">{opt.icon}</span>
               <span className="option-label">{opt.label}</span>
@@ -196,15 +221,14 @@ export default function HairstyleGenerator({ token, backendUrl, onGenerationStar
         </div>
 
         {validationError && (
-          <div className="alert alert-danger" style={{ marginBottom: "16px" }}>
+          <div className="alert alert-danger">
             ⚠️ {validationError}
           </div>
         )}
 
         <button
           type="submit"
-          className="btn btn-primary"
-          style={{ width: "100%", height: "50px", fontSize: "16px" }}
+          className="btn btn-primary btn-full btn-lg"
           disabled={loading}
         >
           {loading ? "Generating Tutorial..." : "Generate Hairstyle with AI"}
