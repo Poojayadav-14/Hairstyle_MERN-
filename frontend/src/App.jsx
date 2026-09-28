@@ -20,6 +20,8 @@ function AppContent() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  // Selected Profile (Male / Female)
+  const [selectedGender, setSelectedGender] = useState(null);
 
   // Generation Result State
   const [resultData, setResultData] = useState(null);
@@ -70,6 +72,7 @@ function AppContent() {
   const handleLogout = () => {
     setToken("");
     setUser(null);
+    setSelectedGender(null);
     setResultData(null);
     localStorage.removeItem("token");
     navigate("/login");
@@ -144,69 +147,101 @@ function AppContent() {
           <Route
             path="/generate"
             element={
-              <div className="dashboard-grid">
-                {/* Form Column */}
-                <HairstyleGenerator
-                  token={token}
-                  backendUrl={BACKEND_URL}
-                  onGenerationStart={() => {
-                    setGenLoading(true);
-                    setGenError("");
-                    setResultData(null);
-                  }}
-                  onGenerationSuccess={(data) => {
-                    setResultData(data);
-                    setGenLoading(false);
-                  }}
-                  onGenerationError={(errMsg) => {
-                    setGenError(errMsg);
-                    setGenLoading(false);
-                  }}
-                />
-
-                {/* Results Column */}
-                <div>
-                  {genLoading && (
-                    <div className="glass-card loading-container">
-                      <div className="loading-spinner"></div>
-                      <div className="loading-text">Consulting AI Stylist...</div>
-                      <p className="state-card-desc">
-                        Generating step-by-step instructions and product tips matching your exact hair type. This will take just a few seconds...
-                      </p>
-                    </div>
-                  )}
-
-                  {genError && (
-                    <div className="glass-card state-card">
-                      <span className="state-card-icon">⚠️</span>
-                      <div className="alert alert-danger">{genError}</div>
-                      <p className="state-card-desc">
-                        Please verify your parameters and try generating again.
-                      </p>
-                    </div>
-                  )}
-
-                  {resultData && (
-                    <HairstyleResult
-                      resultData={resultData}
-                      token={token}
-                      backendUrl={BACKEND_URL}
-                    />
-                  )}
-
-                  {!genLoading && !genError && !resultData && (
-                    <div className="glass-card state-card large">
-                      <span className="state-card-icon">🌟</span>
-                      <h3 className="state-card-title">
-                        Your Style Guide Awaits
-                      </h3>
-                      <p className="state-card-desc">
-                        Select your hair parameters and styling preferences on the left, then click Generate to construct a tailored step-by-step tutorial.
-                      </p>
-                    </div>
-                  )}
+              !selectedGender && !resultData && !genLoading && !genError ? (
+                <div className="gender-landing-container">
+                  <HairstyleGenerator
+                    token={token}
+                    backendUrl={BACKEND_URL}
+                    gender={selectedGender}
+                    onGenderChange={(g) => {
+                      setSelectedGender(g);
+                      if (!g) setResultData(null);
+                    }}
+                    onGenerationStart={() => {
+                      setGenLoading(true);
+                      setGenError("");
+                      setResultData(null);
+                    }}
+                    onGenerationSuccess={(data) => {
+                      setResultData(data);
+                      setGenLoading(false);
+                    }}
+                    onGenerationError={(errMsg) => {
+                      setGenError(errMsg);
+                      setGenLoading(false);
+                    }}
+                  />
                 </div>
-              </div>
+              ) : (
+                <div className="dashboard-grid">
+                  {/* Form Column */}
+                  <HairstyleGenerator
+                    token={token}
+                    backendUrl={BACKEND_URL}
+                    gender={selectedGender}
+                    onGenderChange={(g) => {
+                      setSelectedGender(g);
+                      if (!g) setResultData(null);
+                    }}
+                    onGenerationStart={() => {
+                      setGenLoading(true);
+                      setGenError("");
+                      setResultData(null);
+                    }}
+                    onGenerationSuccess={(data) => {
+                      setResultData(data);
+                      setGenLoading(false);
+                    }}
+                    onGenerationError={(errMsg) => {
+                      setGenError(errMsg);
+                      setGenLoading(false);
+                    }}
+                  />
+
+                  {/* Results Column */}
+                  <div>
+                    {genLoading && (
+                      <div className="glass-card loading-container">
+                        <div className="loading-spinner"></div>
+                        <div className="loading-text">Consulting AI Stylist...</div>
+                        <p className="state-card-desc">
+                          Generating step-by-step instructions and product tips matching your exact hair type. This will take just a few seconds...
+                        </p>
+                      </div>
+                    )}
+
+                    {genError && (
+                      <div className="glass-card state-card">
+                        <span className="state-card-icon">⚠️</span>
+                        <div className="alert alert-danger">{genError}</div>
+                        <p className="state-card-desc">
+                          Please verify your parameters and try generating again.
+                        </p>
+                      </div>
+                    )}
+
+                    {resultData && (
+                      <HairstyleResult
+                        resultData={resultData}
+                        token={token}
+                        backendUrl={BACKEND_URL}
+                      />
+                    )}
+
+                    {!genLoading && !genError && !resultData && (
+                      <div className="glass-card state-card large">
+                        <span className="state-card-icon">🌟</span>
+                        <h3 className="state-card-title">
+                          Your Style Guide Awaits
+                        </h3>
+                        <p className="state-card-desc">
+                          Select your hair parameters and styling preferences on the left, then click Generate to construct a tailored step-by-step tutorial.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
             }
           />
           <Route

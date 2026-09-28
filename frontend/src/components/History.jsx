@@ -119,7 +119,7 @@ export default function History({ token, backendUrl }) {
                 <div className="item-card-header">
                   <div>
                     <span className="result-meta-pill">
-                      {preferences.occasion || "Hairstyle"} • {preferences.stylingPreference || ""}
+                      {preferences.gender ? `${preferences.gender} • ` : ""}{preferences.occasion || "Hairstyle"} • {preferences.stylingPreference || ""}
                     </span>
                     <h3 className="item-card-title">
                       {preferences.hairLength} {preferences.hairType} Style ({result.totalTimeMinutes || 0}m)

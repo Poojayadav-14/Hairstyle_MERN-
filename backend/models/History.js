@@ -26,7 +26,7 @@ const historySchema = new mongoose.Schema(
       timeAvailableMinutes: { type: Number, required: true },
       gender: {
         type: String,
-        enum: ["Male", "Female", "Unisex"],
+        enum: ["Male", "Female"],
         required: true,
       },
     },
