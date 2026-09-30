@@ -158,7 +158,7 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
           <span className="result-meta-pill">
             {preferences.gender ? `${preferences.gender} • ` : ""}{preferences.occasion} • {preferences.stylingPreference}
           </span>
-          <h2 className="page-title">
+          <h2 className="serif-title page-title">
             Your Personalized AI Hairstyle
           </h2>
           <p className="text-muted-sm">
@@ -289,7 +289,7 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
           type="button"
           onClick={handleSave}
           disabled={saving || isSaved}
-          className={`btn ${isSaved ? "btn-secondary" : "btn-primary"}`}
+          className={`btn ${isSaved ? "btn-secondary" : "btn-primary"} btn-full`}
         >
           {saving ? (
             <>
@@ -306,14 +306,6 @@ export default function HairstyleResult({ resultData, token, backendUrl }) {
             </>
           )}
         </button>
-        <a
-          href={youtubeUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-secondary"
-        >
-          <span>📺</span> Search YouTube Tutorials
-        </a>
       </div>
     </div>
   );

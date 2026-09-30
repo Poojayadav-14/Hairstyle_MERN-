@@ -56,6 +56,12 @@
   box-sizing: inherit;
 }
 
+::selection {
+  background: rgba(196, 154, 136, 0.35);
+  color: var(--color-text-headings);
+}
+
+
 body {
   margin: 0;
   padding: 0;
@@ -772,6 +778,14 @@ main {
   text-align: left;
 }
 
+.result-header h2,
+.result-header p,
+.result-header .page-title,
+.result-header .text-muted-sm {
+  background: transparent;
+}
+
+
 .result-meta-pill {
   background: #FAF4F0;
   border: 1px solid rgba(210, 180, 140, 0.4);
@@ -1039,10 +1053,11 @@ footer {
 .page-title {
   font-family: var(--font-serif);
   font-size: 28px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
   margin-bottom: 20px;
-  color: #ffffff;
+  color: var(--color-text-headings);
+  background: transparent;
 }
 
 .text-white {
@@ -1052,6 +1067,7 @@ footer {
 .text-muted-sm {
   color: var(--color-text-muted);
   font-size: 14px;
+  background: transparent;
 }
 
 .text-muted-xs {
@@ -1182,7 +1198,7 @@ footer {
 
 .item-card-title {
   font-size: 18px;
-  color: #ffffff;
+  color: var(--color-text-headings);
   margin-top: 4px;
 }
 
@@ -1293,9 +1309,9 @@ footer {
 
 .state-card-title {
   font-family: var(--font-serif);
-  color: #ffffff;
+  color: var(--color-text-headings);
   font-size: 22px;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 8px;
 }
 
@@ -1318,6 +1334,8 @@ footer {
 /* Result Details & Featured Cards */
 .result-header .page-title {
   margin-bottom: 4px;
+  color: var(--color-text-headings);
+  background: transparent;
 }
 
 .result-time-block {
@@ -1327,7 +1345,7 @@ footer {
 .featured-card-title {
   font-size: 20px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-text-headings);
   margin-bottom: 6px;
 }
 
