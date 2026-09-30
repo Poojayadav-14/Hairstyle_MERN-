@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from "react";
 
+// Safely parse JSON responses — guards against Render cold-start HTML errors
+async function safeJsonParse(res) {
+  if (res.status === 502 || res.status === 503 || res.status === 504) {
+    throw new Error("Stylist server is waking up. Please retry in 10-15 seconds.");
+  }
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("Stylist server is waking up. Please retry in 10-15 seconds.");
+  }
+  return res.json();
+}
+
 // Helper to match step description to a relevant emoji
 function getStepEmoji(text) {
   if (!text) return "💇‍♀️";
@@ -35,7 +47,7 @@ export default function History({ token, backendUrl }) {
         },
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to load history.");

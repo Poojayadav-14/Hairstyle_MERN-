@@ -17,7 +17,7 @@ const app = express();
 // --- Core Middleware ---
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*", // React frontend URL
+    origin: true,
     credentials: true,
   })
 );

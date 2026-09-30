@@ -14,7 +14,20 @@ import HairstyleResult from "./components/HairstyleResult";
 import History from "./components/History";
 import SavedStyles from "./components/SavedStyles";
 
-const BACKEND_URL = import.meta.env.VITE_API_BASE_URL;
+const rawBackendUrl = import.meta.env.VITE_API_BASE_URL || "https://hairstyle-mern.onrender.com";
+const BACKEND_URL = rawBackendUrl.replace(/\/+$/, "");
+
+// Safely parse JSON responses — guards against Render cold-start HTML errors
+async function safeJsonParse(res) {
+  if (res.status === 502 || res.status === 503 || res.status === 504) {
+    throw new Error("Stylist server is waking up. Please retry in 10-15 seconds.");
+  }
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("Stylist server is waking up. Please retry in 10-15 seconds.");
+  }
+  return res.json();
+}
 
 function AppContent() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
@@ -43,7 +56,7 @@ function AppContent() {
           if (!res.ok) {
             throw new Error("SERVER_ERROR");
           }
-          return res.json();
+          return safeJsonParse(res);
         })
         .then((data) => {
           setUser(data.data);
