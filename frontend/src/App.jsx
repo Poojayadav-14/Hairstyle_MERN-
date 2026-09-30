@@ -14,8 +14,8 @@ import HairstyleResult from "./components/HairstyleResult";
 import History from "./components/History";
 import SavedStyles from "./components/SavedStyles";
 
-const rawBackendUrl = import.meta.env.VITE_API_BASE_URL || "https://hairstyle-mern.onrender.com";
-const BACKEND_URL = rawBackendUrl.replace(/\/+$/, "");
+const rawUrl = import.meta.env.VITE_API_BASE_URL || "https://hairstyle-mern.onrender.com";
+const BACKEND_URL = rawUrl.replace(/[\[\]'"`]/g, "").replace(/\/+$/, "");
 
 // Safely parse JSON responses — guards against Render cold-start HTML errors
 async function safeJsonParse(res) {
